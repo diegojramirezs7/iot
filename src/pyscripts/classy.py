@@ -94,8 +94,8 @@ class Driver:
 		averageHumidity = totalHumidity / 10
 		averageTemp = totalTemp / 10
 
-		with open(directory+, "a") as f:
-			if self.count = 0:
+		with open(directory, "a") as f:
+			if self.count == 0:
 				f.write("count, humidity, temperature, timestamp\n")
 			
 			st = "%s, %s, %s, %s\n"%(self.count+1, averageHumidity, averageTemp, timestamp)
@@ -108,6 +108,7 @@ class Driver:
 				f.write("count, light level, timestamp\n")
 			
 			lightLevel = lightsensor.readLight()
+			#lightLevel = 3
 			st = "%s,  %s, %s\n"%(self.count+1, lightLevel, timestamp)
 			f.write(st)
 		
@@ -173,7 +174,7 @@ class Driver:
 			if envDiff.seconds >= 300:
 				lightpath = "/home/pi/Documents/logs/light_data.csv"
 				thPath = "/home/pi/Documents/logs/temp_humidity.csv"
-				self.save_lightlevel(lightpath, str(self.envTime))
+				#self.save_lightlevel(lightpath, str(self.envTime))
 				self.save_th(thPath, str(self.envTime))
 				self.lastEnvTime = datetime.now()
 				self.count += 1
