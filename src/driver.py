@@ -1,5 +1,7 @@
 import random
 from datetime import datetime
+import os
+
 
 def get_weight():
 	weight = random.randint(0, 10)
@@ -21,20 +23,27 @@ def main():
 				st = "we got here: "+str(counter)+", weight: "+str(weight)+", diff: "+str(diff.seconds)
 				print(st)
 
-def save_weight(timestamp, weight = 0):
+def save_weight(timestamp = 0, weight = 0):
 	ls = []
 	total = 0
 	
 	for i in range(10):
 		dt = get_weight()
-		total += weight
+		total += dt
 		ls.append(dt)
 
 	average = total / 10
-	path = "somepath"
+	path = "/Users/diego_ramirezs/Documents/misc/mytest.csv"
+	
+	#os.mkdir("dirname")
 	with open(path, 'w+') as f:
-		f.write()
+		for item in ls:
+			st = "weight: "+str(item)+"\n"
+			f.write(st)
 
+		st = "average: "+str(average)
+		f.write(st)
 
 #threading
 main()
+
