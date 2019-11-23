@@ -1,49 +1,48 @@
-import random
-from datetime import datetime
-import os
+import smbus
+import time
+# Define some constants from the datasheet
+DEVICE     = 0x23 # Default device I2C address
 
+POWER_DOWN = 0x00 # No active state
+POWER_ON   = 0x01 # Power on
+RESET      = 0x07 # Reset data register value
 
-def get_weight():
-	weight = random.randint(0, 10)
-	return weight
+# Start measurement at 4lx resolution. Time typically 16ms.
+CONTINUOUS_LOW_RES_MODE = 0x13
+# Start measurement at 1lx resolution. Time typically 120ms
+CONTINUOUS_HIGH_RES_MODE_1 = 0x10
+# Start measurement at 0.5lx resolution. Time typically 120ms
+CONTINUOUS_HIGH_RES_MODE_2 = 0x11
+# Start measurement at 1lx resolution. Time typically 120ms
+# Device is automatically set to Power Down after measurement.
+ONE_TIME_HIGH_RES_MODE_1 = 0x20
+# Start measurement at 0.5lx resolution. Time typically 120ms
+# Device is automatically set to Power Down after measurement.
+ONE_TIME_HIGH_RES_MODE_2 = 0x21
+# Start measurement at 1lx resolution. Time typically 120ms
+# Device is automatically set to Power Down after measurement.
+ONE_TIME_LOW_RES_MODE = 0x23
+
+#bus = smbus.SMBus(0) # Rev 1 Pi uses 0
+bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
+
+def convertToNumber(data):
+  # Simple function to convert 2 bytes of data
+  # into a decimal number. Optional parameter 'decimals'
+  # will round to specified number of decimal places.
+  result=(data[1] + (256 * data[0])) / 1.2
+  return (result)
+
+def readLight(addr=DEVICE):
+  # Read data from I2C interface
+  data = bus.read_i2c_block_data(addr,ONE_TIME_HIGH_RES_MODE_1)
+  return convertToNumber(data)
 
 def main():
-	previousTime = datetime.now()
-	counter = 0
-	while True:
-		weight = get_weight()
-		if weight > 5.3:
-			currentTime = datetime.now()
-			diff = currentTime - previousTime
-			if  diff.seconds > 3:
-				counter += 1
-				#save_weight(currentTime, weigth)
-				#take_pictures(currentTime)
-				previousTime = currentTime
-				st = "we got here: "+str(counter)+", weight: "+str(weight)+", diff: "+str(diff.seconds)
-				print(st)
+  while True:
+    lightLevel=readLight()
+    print("Light Level : " + format(lightLevel,'.2f') + " lx")
+    time.sleep(0.5)
 
-def save_weight(timestamp = 0, weight = 0):
-	ls = []
-	total = 0
-	
-	for i in range(10):
-		dt = get_weight()
-		total += dt
-		ls.append(dt)
-
-	average = total / 10
-	path = "/Users/diego_ramirezs/Documents/misc/mytest.csv"
-	
-	#os.mkdir("dirname")
-	with open(path, 'w+') as f:
-		for item in ls:
-			st = "weight: "+str(item)+"\n"
-			f.write(st)
-
-		st = "average: "+str(average)
-		f.write(st)
-
-#threading
-main()
-
+if __name__=="__main__":
+   main()
