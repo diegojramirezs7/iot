@@ -10,7 +10,10 @@ class Driver:
 	def __init__(self):
 		self.camera = PiCamera()
 		self.ser = serial.Serial('/dev/ttyACM0', 9600)
-		self.previousTime = datetime.now()
+		self.lastTimeWeightSaved = datetime.now()
+		self.lastEnvTime = datetime.now()
+		self.envTime = datetime.now()
+		self.count = 0
 
 	def read_arduino(self, weight = False, ht = False):
 		"""not tested yet, passing the true value to only one argument will return only that value
@@ -44,79 +47,83 @@ class Driver:
 		Camera library already included in PI, take a default of 5 pictures when called
 		save all the pictures in director passed as argument
 		"""
-		camera.start_preview(alpha = 200)
+		self.camera.start_preview(alpha = 200)
 		for i in range(n):
 			path = directory+"pic%s.jpg" % i
-			camera.capture(path)
+			self.camera.capture(path)
 			time.sleep(1)
 	
-		camera.stop_preview()
+		self.camera.stop_preview()
 
-	#just in case only weight is to be read, not actually used in script
-	def save_weight(self, directory, weight):
+	#if only weight needs to be saved
+	def save_weight(self, directory):
 		"""
 		save weight in a weight.csv file
 		"""
 		ls = []
 		total = 0
 		for i in range(1, 11):
-			dt = read_arduino(weight = True)
+			dt = self.read_arduino(weight = True)
 			ls.append(dt)
 			total += float(dt)
 
 		average = total / 10.0
 
 		with open(directory+"/weight.csv", "w+") as f:
-			counter = 1
+			ctr = 1
 			f.write("count, weight")
 			for item in ls:
-				st = "%s, %s\n"%(counter, item)
+				st = "%s, %s\n"%(ctr, item)
 				f.write(st)
-				counter += 1
+				ctr += 1
 
 			tx = "average, %s"%average
 			f.write(tx)
 
-	#just in case only temp and humidity want to be read, not actually used in script
-	def save_th(self, directory):
-		ls = []
+	#if only temp and humidity want to be read and saved
+	def save_th(self, directory, timestamp):
+		#ls = []
 		totalHumidity = 0
 		totalTemp = 0
 		for i in range(1, 11):
-			humidity, temp = read_arduino(ht = True)
+			humidity, temp = self.read_arduino(ht = True)
 			totalHumidity += float(humidity)
 			totalTemp += float(temp)
-			ls.append((humidity, temp))
+			#ls.append((humidity, temp))
 
 		averageHumidity = totalHumidity / 10
 		averageTemp = totalTemp / 10
 
-		with open(directory+"/temp_humidity.csv") as f:
-			counter = 1
-			f.write("humidity, temperature")
-			for item in ls:
-				st = st = "%s, %s\n"%item
-				f.write(st)
-				counter += 1
+		with open(directory+, "a") as f:
+			if self.count = 0:
+				f.write("count, humidity, temperature, timestamp\n")
+			
+			st = "%s, %s, %s, %s\n"%(self.count+1, averageHumidity, averageTemp, timestamp)
+			f.write(st)
 
-			tx = "average, %s, %s"%(averageHumidity, averageTemp)
-			f.write(tx)
 
-	def save_lightlevel(self, directory):
-		with open(directory+"/light_level.csv") as f:
-			f.write("count, light level")
-			for i in range(1, 11):
-				lightLevel = lightsensor.readLight()
-				st = "%s,  %s\n"%(i, lightLevel)
-				f.write(st)
+	def save_lightlevel(self, path, timestamp):
+		with open(path, "a") as f:
+			if self.count == 0:
+				f.write("count, light level, timestamp\n")
+			
+			lightLevel = lightsensor.readLight()
+			st = "%s,  %s, %s\n"%(self.count+1, lightLevel, timestamp)
+			f.write(st)
+		
+			# for i in range(1, 11):
+			# 	lightLevel = lightsensor.readLight()
+			# 	st = "%s,  %s\n"%(i, lightLevel)
+			# 	f.write(st)
 
+	#save all three to a same file, not actually used in script
 	def save_wth(self, directory):
 		ls = []
 		totalHumidity = 0
 		totalTemp = 0
 		totalWeight = 0
 		for i in range(1, 11):
-			weight, humidity, temp = read_arduino()
+			weight, humidity, temp = self.read_arduino()
 			totalWeight += float(weight)
 			totalHumidity += float(humidity)
 			totalTemp += float(temp)
@@ -126,14 +133,14 @@ class Driver:
 		averageHumidity = totalHumidity / 10
 		averageTemp = totalTemp / 10
 
-		with open(directory+"/data.csv") as f:
-			counter = 1
+		with open(directory+"/data.csv", "w+") as f:
+			ctr = 1
 			f.write("count, weight, humidity, temperature\n")
 			for item in ls:
-				line = (counter, item[0], item[1], item[2])
+				line = (ctr, item[0], item[1], item[2])
 				st = st = "%s, %s, %s, %s\n"%line
 				f.write(st)
-				counter += 1
+				ctr += 1
 
 			tx = "average, %s, %s, %s"%(averageWeight, averageHumidity, averageTemp)
 			f.write(tx)
@@ -149,18 +156,27 @@ class Driver:
 			weight = self.read_arduino(weight = True)
 			if weight > 5.3:
 				#update current time every time weight scale is more than 5 grams
-				currentTime = datetime.now()
-				diff = currentTime - previousTime
+				lastTimeWeightDetected = datetime.now()
+				diff = lastTimeWeightDetected - self.lastTimeWeightSaved
 				#more than 5 minutes from last measurement
-				if diff.seconds > 7:
+				if diff.seconds >= 7:
 					#for each animal a folder is created, folder name is the time.
 					#in folder there will be 5 pictures and weight.csv file
-					dir = "/home/pi/Documents/logs/"+str(currentTime)
-					os.mkdir(dir)
-					take_pictures(dir, n = 5)
-					save_wth(dir)
-					save_lightlevel(dir)
-					previousTime = datetime.now()
+					directory = "/home/pi/Documents/logs/"+str(lastTimeWeightDetected)
+					os.mkdir(directory)
+					self.take_pictures(directory, n = 5)
+					self.save_weight()
+					self.lastTimeWeightSaved = datetime.now()
+
+			self.envTime = datetime.now()
+			envDiff = self.envTime - self.lastEnvTime
+			if envDiff.seconds >= 300:
+				lightpath = "/home/pi/Documents/logs/light_data.csv"
+				thPath = "/home/pi/Documents/logs/temp_humidity.csv"
+				self.save_lightlevel(lightpath, str(self.envTime))
+				self.save_th(thPath, str(self.envTime))
+				self.lastEnvTime = datetime.now()
+				self.count += 1
 
 if __name__ == '__main__':
 	driver = Driver()
