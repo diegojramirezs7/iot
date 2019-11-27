@@ -39,6 +39,8 @@ class Driver:
 						humidity = dataArray[1]
 						temperature = dataArray[2]
 						return humidity, temperature
+				else:
+					print("Arduino incorrect data format")
 		except:
 			print("Error Reading from Arduino")
 
@@ -49,13 +51,17 @@ class Driver:
 		Camera library already included in PI, take a default of 5 pictures when called
 		save all the pictures in director passed as argument
 		"""
-		self.camera.start_preview(alpha = 200)
-		for i in range(n):
-			path = directory+"pic%s.jpg" % i
-			self.camera.capture(path)
-			time.sleep(1)
-	
-		self.camera.stop_preview()
+		try:
+			self.camera.start_preview(alpha = 200)
+			for i in range(n):
+				#camera.flash_mode = "on"
+				path = directory+"/pic%s.jpg" % i
+				self.camera.capture(path)
+				time.sleep(1)
+		
+			self.camera.stop_preview()
+		except:
+			print("camera error")
 	
 	#if only weight needs to be saved
 	def save_weight(self, directory):
@@ -65,13 +71,13 @@ class Driver:
 		try:
 			ls = []
 			total = 0
-			for i in range(1, 11):
+			for i in range(1, 6):
 				dt = self.read_arduino(weight = True)
 				if dt != None:
 					ls.append(dt)
 					total += float(dt)
 
-			average = total / 10.0
+			average = total / 5.0
 
 			with open(directory+"/weight.csv", "w+") as f:
 				ctr = 1
@@ -91,19 +97,20 @@ class Driver:
 		try:
 			totalHumidity = 0
 			totalTemp = 0
-			for i in range(1, 11):
+			for i in range(1, 6):
 				humidity, temp = self.read_arduino(ht = True)
 				totalHumidity += float(humidity)
 				totalTemp += float(temp)
 
-			averageHumidity = totalHumidity / 10
-			averageTemp = totalTemp / 10
+			averageHumidity = totalHumidity / 5
+			averageTemp = totalTemp / 5
 
 			with open(path, "a") as f:
 				if os.stat(path).st_size == 0:
 					f.write("count, humidity, temperature, timestamp\n")
 				
-				st = "%s, %s, %s, %s\n"%(self.count+1, averageHumidity, averageTemp, timestamp)
+				#st = "%s, %s, %s, %s\n"%(self.count+1, averageHumidity, averageTemp, timestamp)
+				st = "{0:7.4f}, {1:7.4f}, {2}".format(averageHumidity, averageTemp, timestamp)
 				f.write(st)
 		except:
 			print("Error saving temp and humidity")
@@ -160,27 +167,31 @@ class Driver:
 			#get weight from arduino serial com
 			try:
 				weight = self.read_arduino(weight = True)
-				if weight == None:
+				weight = float(weight)
+				if weight is None:
 					weight = 0.0
+					print("weight is None")
 			except:
 				weight = 0.0
+				print("weight is none")
 
-			if weight > 5.3:
+			if weight > 5.0:
 				#update current time every time weight scale is more than 5 grams
 				lastTimeWeightDetected = datetime.now()
 				diff = lastTimeWeightDetected - self.lastTimeWeightSaved
 				#more than 5 minutes from last measurement
-				if diff.seconds >= 7:
+				if diff.seconds >= 10:
 					#for each animal a folder is created, folder name is the time.
 					#in folder there will be 5 pictures and weight.csv file
 					directory = "/home/pi/Documents/logs/"+str(lastTimeWeightDetected)
 					os.mkdir(directory)
 					self.take_pictures(directory, n = 5)
-					self.save_weight()
+					self.save_weight(directory)
 					self.lastTimeWeightSaved = datetime.now()
 
 			self.envTime = datetime.now()
 			envDiff = self.envTime - self.lastEnvTime
+			
 			if envDiff.seconds >= 300:
 				lightpath = "/home/pi/Documents/logs/light_data.csv"
 				thPath = "/home/pi/Documents/logs/temp_humidity.csv"
