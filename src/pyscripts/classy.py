@@ -115,6 +115,7 @@ class Driver:
 		except:
 			print("Error saving temp and humidity")
 
+	#read from pins using lightsensor module
 	def save_lightlevel(self, path, timestamp):
 		try:
 			with open(path, "a") as f:
@@ -127,35 +128,38 @@ class Driver:
 				f.write(st)
 		except:
 			print("error saving light level")
-		
+
 	#save all three to a same file, not actually used in script
 	def save_wth(self, directory):
 		ls = []
 		totalHumidity = 0
 		totalTemp = 0
 		totalWeight = 0
-		for i in range(1, 11):
-			weight, humidity, temp = self.read_arduino()
-			totalWeight += float(weight)
-			totalHumidity += float(humidity)
-			totalTemp += float(temp)
-			ls.append((weight, humidity, temp))
+		try:
+			for i in range(1, 11):
+				weight, humidity, temp = self.read_arduino()
+				totalWeight += float(weight)
+				totalHumidity += float(humidity)
+				totalTemp += float(temp)
+				ls.append((weight, humidity, temp))
 
-		averageWeight = totalWeight / 10
-		averageHumidity = totalHumidity / 10
-		averageTemp = totalTemp / 10
+			averageWeight = totalWeight / 10
+			averageHumidity = totalHumidity / 10
+			averageTemp = totalTemp / 10
 
-		with open(directory+"/data.csv", "w+") as f:
-			ctr = 1
-			f.write("count, weight, humidity, temperature\n")
-			for item in ls:
-				line = (ctr, item[0], item[1], item[2])
-				st = st = "%s, %s, %s, %s\n"%line
-				f.write(st)
-				ctr += 1
+			with open(directory+"/data.csv", "w+") as f:
+				ctr = 1
+				f.write("count, weight, humidity, temperature\n")
+				for item in ls:
+					line = (ctr, item[0], item[1], item[2])
+					st = st = "%s, %s, %s, %s\n"%line
+					f.write(st)
+					ctr += 1
 
-			tx = "average, %s, %s, %s"%(averageWeight, averageHumidity, averageTemp)
-			f.write(tx)
+				tx = "average, %s, %s, %s"%(averageWeight, averageHumidity, averageTemp)
+				f.write(tx)
+		except:
+			print("error saving all three")
 
 	def run(self):
 		"""
