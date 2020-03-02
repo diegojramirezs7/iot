@@ -16,6 +16,7 @@ class Driver:
 		self.count = 0
 		self.weightThreshold = 5
 		self.timeThreshold = 300
+		self.minimunSecsBetween = 300
 
 	def read_arduino(self, weight = False, ht = False):
 		"""passing the true value to only one argument will return only that value
@@ -186,7 +187,7 @@ class Driver:
 				lastTimeWeightDetected = datetime.now()
 				diff = lastTimeWeightDetected - self.lastTimeWeightSaved
 				#more than 5 minutes from last measurement
-				if diff.seconds >= 10:
+				if diff.seconds >= self.minimunSecsBetween:
 					#for each animal a folder is created, folder name is the time.
 					#in folder there will be 5 pictures and weight.csv file
 					directory = "/home/pi/Documents/logs/"+str(lastTimeWeightDetected)
