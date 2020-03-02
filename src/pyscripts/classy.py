@@ -14,6 +14,8 @@ class Driver:
 		self.lastEnvTime = datetime.now()
 		self.envTime = datetime.now()
 		self.count = 0
+		self.weightThreshold = 5
+		self.timeThreshold = 300
 
 	def read_arduino(self, weight = False, ht = False):
 		"""passing the true value to only one argument will return only that value
@@ -179,7 +181,7 @@ class Driver:
 				weight = 0.0
 				print("weight is none")
 
-			if weight > 5.0:
+			if weight > self.weightThreshold:
 				#update current time every time weight scale is more than 5 grams
 				lastTimeWeightDetected = datetime.now()
 				diff = lastTimeWeightDetected - self.lastTimeWeightSaved
@@ -196,7 +198,7 @@ class Driver:
 			self.envTime = datetime.now()
 			envDiff = self.envTime - self.lastEnvTime
 			
-			if envDiff.seconds >= 300:
+			if envDiff.seconds >= self.timeThreshold:
 				lightpath = "/home/pi/Documents/logs/light_data.csv"
 				thPath = "/home/pi/Documents/logs/temp_humidity.csv"
 				self.save_lightlevel(lightpath, str(self.envTime))
