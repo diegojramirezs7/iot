@@ -19,10 +19,10 @@ class Driver:
 		self.minimunSecsBetween = 300
 
 	def read_arduino(self, weight = False, ht = False):
-		"""passing the true value to only one argument will return only that value
-		calling method with no arguments will return all 3 values and calling
-		True on both arguments will return all 3 values
-		Read data from /dev/ttyACM0 file which is constantly received data from arduino """
+		"""passing the true value to only one argument will return only the respective value.
+		Calling method with no arguments will return all 3 values. 
+		calling True on both arguments will also return all 3 values.
+		Read data from /dev/ttyACM0 file which is constantly receiving data from arduino """
 		try:
 			data = self.ser.readline()
 			if data:
